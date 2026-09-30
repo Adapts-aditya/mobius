@@ -37,7 +37,7 @@ type ToolCall struct {
 // Message represents a single turn in a multi-turn conversation.
 type Message struct {
 	Role       Role       `json:"role"`
-	Content    string     `json:"content,omitempty"`
+	Content    string     `json:"content"`
 	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
 	ToolCallID string     `json:"tool_call_id,omitempty"`
 }

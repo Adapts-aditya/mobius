@@ -80,7 +80,10 @@ func (p *OpenAIProvider) Generate(ctx context.Context, req *ChatRequest) (*ChatR
 		return nil, fmt.Errorf("chat request cannot be nil")
 	}
 
-	body, err := json.Marshal(req)
+	payload := *req
+	payload.Message = NormalizeMessages(req.Message)
+
+	body, err := json.Marshal(&payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}

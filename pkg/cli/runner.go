@@ -13,11 +13,10 @@ func RunGoal(s *session.Session, userInstruction string) error {
 		s.Name = s.Agent.GenerateTitle(ctx, userInstruction)
 		s.Started = true
 	}
-	result, err := s.Agent.Run(ctx, s.Context, userInstruction)
+	_, err := s.Agent.Run(ctx, s.Context, userInstruction)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return err
 	}
-	fmt.Println("\n" + result + "\n")
 	return nil
 }

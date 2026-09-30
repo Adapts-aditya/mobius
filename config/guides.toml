@@ -1,20 +1,17 @@
 # config/guides.toml
-
-# The harness checks files in the workspace and orders them by priority (highest first)
+#
+# Guide files injected into the Mobius CLI system prompt (not Cursor IDE rules).
+# Higher priority numbers are appended **last** so they win on conflicts.
 
 [[candidates]]
 path = "AGENTS.md"
+priority = 40
+
+[[candidates]]
+path = "config/repl_guide.md"
 priority = 100
 
-[[candidates]]
-path = "CLAUDE.md"
-priority = 80
-
-[[candidates]]
-path = ".cursorrules"
-priority = 60
-
-# Users can add their own custom guide files anytime:
+# Optional extras (ignored if missing):
 [[candidates]]
 path = "INTERNAL_RULES.md"
-priority = 95
+priority = 90

@@ -93,8 +93,10 @@ func (gs *GuideSet) RenderSystemPrompt() string {
 	}
 	var sb strings.Builder
 	sb.WriteString("\n\n# WORKSPACE GUIDES & RULES\n")
-	sb.WriteString("The following project-specific instructions and constraints take precedence:\n\n")
-	for _, g := range gs.Guides {
+	sb.WriteString("If guides conflict, the **last** section below takes precedence.\n\n")
+	// Lowest priority first, highest last — later sections override earlier ones.
+	for i := len(gs.Guides) - 1; i >= 0; i-- {
+		g := gs.Guides[i]
 		sb.WriteString("## Guide: ")
 		sb.WriteString(g.Source)
 		sb.WriteString("\n```markdown\n")
