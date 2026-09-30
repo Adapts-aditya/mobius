@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"mobius/pkg/agentctx"
-	"mobius/pkg/artifact"
 	"mobius/pkg/events"
 	"mobius/pkg/llm"
 	"mobius/pkg/sensors"
@@ -102,64 +101,7 @@ func (a *Agent) Run(ctx context.Context, c *agentctx.ConversationContext, userIn
 			return resp.Content, nil
 		}
 
-		fileModified := false
-		for _, tc := range resp.ToolCalls {
-			if tc.Function.Name == "write_file" || tc.Function.Name == "edit_file" {
-				fileModified = true
-			}
-			fmt.Printf("[Tool] %s(%s)\n", tc.Function.Name, tc.Function.Arguments)
-			tool, err := a.registry.Get(tc.Function.Name)
-			var output string
-			var toolErr string
-			if err != nil {
-				output = fmt.Sprintf("Error: tool '%s' not found", tc.Function.Name)
-				toolErr = output
-			} else {
-				out, execErr := tool.Execute(ctx, tc.Function.Arguments)
-				if execErr != nil {
-					output = fmt.Sprintf("Tool error: %s\nOutput: %s", execErr, out)
-					toolErr = execErr.Error()
-				} else {
-					output = out
-				}
-			}
-			// Artifact interception: offload large outputs
-			if a.artifactStore != nil {
-				result := artifact.Intercept(a.artifactStore, a.threadID, tc.Function.Name, output)
-				c.AddToolResult(tc.ID, result.Observation) // LLM sees preview
-				// EventStore gets full details
-				if a.events != nil {
-					ref := result.ArtifactRef
-					_ = a.events.Append(ctx, events.Event{
-						ThreadID:   a.threadID,
-						Step:       step,
-						Type:       events.EventToolResult,
-						ToolCallID: tc.ID,
-						ToolName:   tc.Function.Name,
-						ToolArgs:   tc.Function.Arguments,
-						ToolOutput: result.Observation,
-						ContentRef: ref,
-						ToolError:  toolErr,
-					})
-				}
-			} else {
-				// Add tool observation to history
-				c.AddToolResult(tc.ID, output)
-				// Record tool result event to EventStore
-				if a.events != nil {
-					_ = a.events.Append(ctx, events.Event{
-						ThreadID:   a.threadID,
-						Step:       step,
-						Type:       events.EventToolResult,
-						ToolCallID: tc.ID,
-						ToolName:   tc.Function.Name,
-						ToolArgs:   tc.Function.Arguments,
-						ToolOutput: output,
-						ToolError:  toolErr,
-					})
-				}
-			}
-		}
+		fileModified := a.runToolCalls(ctx, c, step, resp.ToolCalls)
 
 		// Self-healing sensor verification
 		if fileModified && a.sensorRegistry != nil && a.sensorRegistry.Count() > 0 {
